@@ -1,0 +1,510 @@
+1) vamos criar uma pasta chamada controller para podermos organizar e gerenciar
+melhor o codigo.
+2) dentro da pasta controller vamos criar uma pasta para cada endpoint o 
+primeiro a ser criado a pasta atendimento.
+
+3) dentro de controller/atendimento/index.js 
+
+4) vamos instalar o consign
+O consign vai agrupar essas outras rotas e coloca-las tudo dentro de um unico 
+lugar.
+
+vou importar o consign dentro do index.js
+
+e carregar ele dentro do index.js
+const express = require('express');
+const consign = require('consign')
+const app = express()
+
+/*
+consign()
+  .include('controller/atendimento')
+  .into(app)
+*/
+
+app.listen(3000, () => {
+  console.log('servidor rodando na porta 3000');
+})
+
+app.get('/', (req, res) => {
+  res.status(200).json({ msg: 'ok' });
+})
+
+Agora vou criar uma pasta chamada config onde vai ficar tudo referente a 
+configuração da api.
+agora vou criar um arquivo chamado custom-express onde eu coloco todos os 
+detalhes de configuração da api e do express.
+
+const express = require('express');
+const consign = require('consign')
+
+module.exports = () => {
+  const app = express();
+
+  consign()
+  .include('controller/atendimento')
+  .into(app)
+
+  return app;
+}
+
+agora o index.js ficou sem as configuração do express 
+
+const customExpress = require('./config/custom-express.js')
+
+const app = customExpress()
+app.listen(3000, () => {
+  console.log('servidor rodando na porta 3000');
+})
+
+
+vamos criar um metodo POST para rota de atendimento
+
+app.post('/atendimento', (req, res) => {
+  res.status(201).send('vc esta na rota de atendimento')
+})
+
+A req "requisição" precisa ser entendita por isso vamos instalar uma biblioteca 
+de terceiros.
+
+body-parser no customExpress
+
+const express = require('express');
+const consign = require('consign')
+// const bodyParser = require('body-parser');
+
+
+module.exports = () => {
+  const app = express();
+
+  // app.use(bodyParser.urlencoded({ extended: true }))
+
+  consign()
+  .include('controller/atendimento')
+  .into(app)
+
+  return app;
+}
+
+
+//body-parse tipo json
+const express = require('express');
+const consign = require('consign')
+// const bodyParser = require('body-parser');
+
+
+module.exports = () => {
+  const app = express();
+
+  app.use(bodyParser.urlencoded({ extended: true }))
+  // app.use(bodyParser.json())
+
+  consign()
+  .include('controller/atendimento')
+  .into(app)
+
+  return app;
+}
+
+
+instalar o mysql no node
+vou criar uma pasta chamada infraestrutura onde fazemos a conexao com o 
+banco de dados.
+
+vou criar um arquivo chamado conexao.js
+const mysql = require('mysql');
+
+const conexao = mysql.createConnection({
+  host: 'localhost',
+  port: 3307,
+  user: 'root',
+  password: '29121950',
+  database: 'schedule-petshop'
+})
+
+module.exports = conexao;
+
+vou chamar a conexao com a index.js;
+
+const customExpress = require('./config/custom-express.js')
+const conexao = require('./infraestrutura/conexao.js')
+
+conexao.connect(erro => {
+  if(erro) {
+    console.log(erro)
+  } else {
+    console.log('connectado com sucesso.')
+
+    const app = customExpress()
+    app.listen(3000, () => {
+      console.log('servidor rodando na porta 3000');
+    })
+  }
+})
+
+
+criando algumas tabelas.
+vamos criar as tabelas de forma automatica se as tabelas nao existirem vao 
+ser criadas de forma automatica.
+vamos criar um arquivo chamada tabela.js dentro da pasta infraestrutura.
+
+No arquivo index.js vou chamar tabelas para verificar se as tabelas existem 
+se nao existirem por favor crie as tabelas.
+dentro do arquivo tabelas.js vamos fazer um teste.
+
+/**********************************************************************/
+class Tabelas {
+  init(conexao) {
+    console.log('Tabelas foram chamadas.')
+  }
+}
+
+module.exports = new Tabelas;
+
+/**********************************************************************/
+
+const customExpress = require('./config/custom-express.js')
+const conexao = require('./infraestrutura/conexao.js')
+const Tabelas = require('./infraestrutura/tabelas.js')
+
+conexao.connect(erro => {
+  if(erro) {
+    console.log(erro)
+  } else {
+    console.log('connectado com sucesso.')
+
+    Tabelas.init(conexao);
+
+    const app = customExpress()
+    app.listen(3000, () => {
+      console.log('servidor rodando na porta 3000');
+    })
+  }
+})
+
+Agora vamos criar as Tabelas dentro do arquivo tabelas.js
+
+class Tabelas {
+  init(conexao) {
+    this.conexao = conexao
+
+    this.criarAtendimento()
+  }
+
+  criarAtendimento() {
+    const sql = `CREATE TABLE Atendimentos (id int NOT NULL AUTO_INCREMENT, 
+      cliente varchar(50) NOT NULL, pet varchar(20), servico varchar(20) NOT
+      NULL, status varchar(20) NOT NULL, observacoes text, PRIMARY KEY(id))`
+
+    this.conexao.query(sql, (erro) => {
+      if(erro) {
+        console.log(erro)
+      } else {
+        console.log('Tabela Atendimento criada com sucesso.')
+      }
+    })
+  }
+}
+
+module.exports = new Tabelas;
+
+SE A TABELA NAO EXISTE CRIA A TABELA SE A TABELA EXISTE ELE NAO A CRIA
+/*********************************************************************/
+class Tabelas {
+  init(conexao) {
+    this.conexao = conexao
+
+    this.criarAtendimento()
+  } 
+
+  criarAtendimento() {
+    const sql = `CREATE TABLE IF NOT EXISTS Atendimentos (id int NOT NULL AUTO_INCREMENT, 
+      cliente varchar(50) NOT NULL, pet varchar(20), servico varchar(20) NOT
+      NULL, status varchar(20) NOT NULL, observacoes text, PRIMARY KEY(id))`
+
+    this.conexao.query(sql, (erro) => {
+      if(erro) {
+        console.log(erro)
+      } else {
+        console.log('Tabela Atendimento criada com sucesso.')
+      }
+    })
+  }
+}
+
+module.exports = new Tabelas;
+/*********************************************************************/
+
+Vamos cria uma pagina chamada model aonde vamos criar a nossa regra de 
+negocio.
+dentro de model vamos cria um arquivo chamado atendimento.js
+no arquivo atendimento.js vamos criar o metodo adicona que esse
+metodo cria um novo atendimento.
+
+const conexao  = require("../infraestrutura/conexao.js")
+
+class Atendimento{
+  adiciona(atendimento) {
+    const sql = 'INSERT INTO Atendimentos SET ?'
+
+    conexao.query(sql, atendimento, (erro, resultados) => {
+      if(erro) {
+        console.log(erro)
+      } else {
+        console.log(resultados)
+      }
+    })
+  }
+}
+
+module.exports = new Atendimento;
+
+
+Agora precisamos chamar atendimento dentro do controller/atendimento/index.js
+para adicionar o metodo adiciona.
+
+const Atendimento = require('../../models/atendimento.js')
+
+module.exports = app => {
+  app.get('/atendimento', (req, res) => {
+    res.status(200).json({ msg: 'ok' });
+  })
+
+  //app.post('/atendimento', (req, res) => {
+  //  const atendimento = req.body
+
+  //  Atendimento.adiciona(atendimento)
+  })
+}
+ adicionando campos de data na tabela atendimento
+
+class Tabelas {
+  init(conexao) {
+    this.conexao = conexao
+
+    this.criarAtendimento()
+  } 
+
+  criarAtendimento() {
+    const sql = `CREATE TABLE IF NOT EXISTS Atendimentos (id int NOT NULL 
+      AUTO_INCREMENT, cliente varchar(50) NOT NULL, pet varchar(20), servico 
+      varchar(20) NOT NULL, /* data datetime NOT NULL, dataCriacao datetime */ 
+      NOT NULL status varchar(20) NOT NULL, observacoes text, PRIMARY KEY(id))`
+
+    this.conexao.query(sql, (erro) => {
+      if(erro) {
+        console.log(erro)
+      } else {
+        console.log('Tabela Atendimento criada com sucesso.')
+      }
+    })
+  }
+}
+
+module.exports = new Tabelas;
+
+agora para pegar as datas vamos colocar elas dentro de models/atendimento.js
+
+const conexao  = require("../infraestrutura/conexao.js")
+
+class Atendimento{
+  adiciona(atendimento) {
+    const dataCriacao = new Date();
+    const atendimentoDatado = {...atendimento, dataCriacao}
+    const sql = 'INSERT INTO Atendimentos SET ?'
+
+    conexao.query(sql, atendimentoDatado, (erro, resultados) => {
+      if(erro) {
+        console.log(erro)
+      } else {
+        console.log(resultados)
+      }
+    })
+  }
+}
+
+module.exports = new Atendimento;
+
+so que agora esta vindo num formato que não é reconhecido pela maquina.
+
+agora instalamos o moment yarn add moment para converter a data para um formato
+que a aplicação reconhece.
+
+// const moment = require('moment')
+const conexao  = require("../infraestrutura/conexao.js")
+
+class Atendimento{
+  adiciona(atendimento) {
+    // const dataCriacao = moment().format('YYYY-MM-DD HH:MM:SS');
+    // const data = moment(atendimento.data, 'DD/MM/YYYY').format('YYYY-MM-DD HH:MM:SS');
+    // const atendimentoDatado = {...atendimento, dataCriacao, data}
+    const sql = 'INSERT INTO Atendimentos SET ?'
+
+    conexao.query(sql, /* atendimentoDatado */, (erro, resultados) => {
+      if(erro) {
+        console.log(erro)
+      } else {
+        console.log(resultados)
+      }
+    })
+  }
+}
+
+module.exports = new Atendimento;
+
+agora vamos passar a resposta dentro do controller
+/*****************************************************************************/
+const Atendimento = require('../../models/atendimento.js')
+
+module.exports = app => {
+  app.get('/atendimento', (req, res) => {
+    res.status(200).json({ msg: 'ok' });
+  })
+
+  app.post('/atendimento', (req, res) => {
+    const atendimento = req.body
+
+    Atendimento.adiciona(atendimento, /* res */)
+  })
+}
+/*****************************************************************************/
+
+agora dentro do model vamos receber o res
+const moment = require('moment')
+const conexao  = require("../infraestrutura/conexao.js")
+
+class Atendimento{
+  adiciona(atendimento, /* res */) {
+    //const dataCriacao = moment().format('YYYY-MM-DD HH:MM:SS');
+    const dataCriacao = moment().format('YYYY-MM-DD HH:MM:SS');
+    const data = moment(atendimento.data, 'DD/MM/YYYY').format('YYYY-MM-DD HH:MM:SS');
+    const atendimentoDatado = {...atendimento, dataCriacao, data}
+    const sql = 'INSERT INTO Atendimentos SET ?'
+
+    conexao.query(sql, atendimentoDatado, (erro, resultados) => {
+      if(erro) {
+        /* res.json(erro) */
+      } else {
+        /* res.json(resultados) */
+      }
+    })
+  }
+}
+
+module.exports = new Atendimento;
+
+pronto podemos testar dentro do Postman;
+
+vamos colocar no retorno dentro do model os status de retorno de criacao e de 
+erro.
+
+const moment = require('moment')
+const conexao  = require("../infraestrutura/conexao.js")
+
+class Atendimento{
+  adiciona(atendimento, res) {
+    //const dataCriacao = moment().format('YYYY-MM-DD HH:MM:SS');
+    const dataCriacao = moment().format('YYYY-MM-DD HH:MM:SS');
+    const data = moment(atendimento.data, 'DD/MM/YYYY').format('YYYY-MM-DD HH:MM:SS');
+    const atendimentoDatado = {...atendimento, dataCriacao, data}
+    const sql = 'INSERT INTO Atendimentos SET ?'
+
+    conexao.query(sql, atendimentoDatado, (erro, resultados) => {
+      if(erro) {
+        // res.status(400).json(erro)
+      } else {
+        // res.status(201).json(resultados)
+      }
+    })
+  }
+}
+
+module.exports = new Atendimento;
+
+
+Tratamento de erros podemos fazer Tratamento de erro dentro do controller 
+aquelas que não tratam de regras de negocio.
+1) vamos valida no model a data essa tem que ser depois data de criacao
+
+const moment = require('moment')
+const conexao  = require("../infraestrutura/conexao.js")
+
+class Atendimento{
+  adiciona(atendimento, res) {
+    //const dataCriacao = moment().format('YYYY-MM-DD HH:MM:SS');
+    const dataCriacao = moment().format('YYYY-MM-DD HH:MM:SS');
+    const data = moment(atendimento.data, 'DD/MM/YYYY').format('YYYY-MM-DD HH:MM:SS');
+
+    // const dataEhValida = moment(data).isSameOrAfter(dataCriacao);
+    // Essa data vai retornar um booleano true ou false;
+
+
+
+    const atendimentoDatado = {...atendimento, dataCriacao, data}
+    const sql = 'INSERT INTO Atendimentos SET ?'
+
+    conexao.query(sql, atendimentoDatado, (erro, resultados) => {
+      if(erro) {
+        res.status(400).json(erro)
+      } else {
+        res.status(201).json(resultados)
+      }
+    })
+  }
+}
+
+module.exports = new Atendimento;
+
+2) E o nome tem que ter no minimo 5 caracteres.
+
+// const clienteEhValido = atendimento.cliente.length >= 5;
+// validação do nome tem que ter no minimo 5 caracteres.
+
+
+dentro do model vou criar um array com dois objetos para validação.
+const moment = require('moment')
+const conexao  = require("../infraestrutura/conexao.js")
+
+class Atendimento{
+  adiciona(atendimento, res) {
+    //const dataCriacao = moment().format('YYYY-MM-DD HH:MM:SS');
+    const dataCriacao = moment().format('YYYY-MM-DD HH:MM:SS');
+    const data = moment(atendimento.data, 'DD/MM/YYYY').format('YYYY-MM-DD HH:MM:SS');
+
+    const dataEhValida = moment(data).isSameOrAfter(dataCriacao);
+    const clienteEhValido = atendimento.cliente.length >= 5;
+
+     /* const validacoes = [
+      {
+        nome: 'data',
+        valido: dataEhValida,
+        mensagem: 'Data deve ser maior ou iqual a data atual'
+      },
+      {
+        nome: 'cliente',
+        valido: clienteEhValido,
+        mensagem: 'Cliente deve ter pelo menos 5 caracteres.'
+      }
+    ]
+
+    const erros = validacoes.filter(campo => !campo.valido)
+    const existemErros = erros.length;
+
+    if(existemErros) {
+      res.status(400).json(erros);
+    } else {
+      const atendimentoDatado = {...atendimento, dataCriacao, data}
+      const sql = 'INSERT INTO Atendimentos SET ?'
+
+      conexao.query(sql, atendimentoDatado, (erro, resultados) => {
+        if(erro) {
+          res.status(400).json(erro)
+        } else {
+          res.status(201).json(resultados)
+        }
+      })
+    } */
+  }
+}
+
+module.exports = new Atendimento;
