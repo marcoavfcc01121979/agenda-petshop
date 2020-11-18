@@ -508,3 +508,158 @@ class Atendimento{
 }
 
 module.exports = new Atendimento;
+
+vamos criar um metodo que lista todos os atendimentos dentro da pasta model
+o nome do metodo lista
+
+const moment = require('moment')
+const conexao  = require("../infraestrutura/conexao.js")
+
+class Atendimento{
+  adiciona(atendimento, res) {
+    //const dataCriacao = moment().format('YYYY-MM-DD HH:MM:SS');
+    const dataCriacao = moment().format('YYYY-MM-DD HH:MM:SS');
+    const data = moment(atendimento.data, 'DD/MM/YYYY').format('YYYY-MM-DD HH:MM:SS');
+
+    const dataEhValida = moment(data).isSameOrAfter(dataCriacao);
+    const clienteEhValido = atendimento.cliente.length >= 5;
+
+    const validacoes = [
+      {
+        nome: 'data',
+        valido: dataEhValida,
+        mensagem: 'Data deve ser maior ou iqual a data atual'
+      },
+      {
+        nome: 'cliente',
+        valido: clienteEhValido,
+        mensagem: 'Cliente deve ter pelo menos 5 caracteres.'
+      }
+    ]
+
+    const erros = validacoes.filter(campo => !campo.valido)
+    const existemErros = erros.length;
+
+    if(existemErros) {
+      res.status(400).json(erros);
+    } else {
+      const atendimentoDatado = {...atendimento, dataCriacao, data}
+      const sql = 'INSERT INTO Atendimentos SET ?'
+
+      conexao.query(sql, atendimentoDatado, (erro, resultados) => {
+        if(erro) {
+          res.status(400).json(erro)
+        } else {
+          res.status(201).json(resultados)
+        }
+      })
+    }
+  }
+
+  /* lista(res) {
+    const sql = "SELECT * FROM Atendimentos"
+
+    conexao.query(sql, (erro, resultados) => {
+      if(erro) {
+        res.status(400).json(erro)
+      } else {
+        res.status(200).json(resultados)
+      }
+    })
+  } */
+}
+
+module.exports = new Atendimento;
+
+agora dentro do controller/atendimento/index.js eu chamo o metodo lista.
+
+const Atendimento = require('../../models/atendimento.js')
+
+module.exports = app => {
+  /* app.get('/atendimento', (req,res) => {
+    Atendimento.lista(res); 
+  }) */
+
+  // lista um unico atendimento 
+  /* app.get('/atendimento/:id', (req, res) => {
+    const { id } = req.params;
+
+    Atendimento.buscaPorId(Number(id), res);
+  }) */
+
+  app.post('/atendimento', (req, res) => {
+    const atendimento = req.body
+
+    Atendimento.adiciona(atendimento, res)
+  })
+}
+
+agora vou criar o metodo buscaPorId no model/atendimento.js
+
+buscaPorId(id, res) {
+  const sql = `SELECT * FROM Atendimentos WHERE id = ${id}`
+
+  conexao.query(sql, (erro, resultados) => {
+    //const atendimento = resultados[0];
+    if(erro) {
+      res.status(400).json(erro)
+    } else {
+      res.status(200).json(resultados[0])
+    }
+  })
+}
+
+dentro do controller vou criar o verbo patch
+
+/*
+  // Vamos ultilizar o patch para atualizar os dados ele pode atualizar 1 ou 
+  // todos os dados.
+  app.patch('/atendimento/:id', (req, res) => {
+    const { id } = req.params;
+    const valores = req.body;
+
+    Atendimento.altera(id, valores, res);
+  })
+*/
+
+agora vamos criar o metodo o altera dentro models/atendimento.js
+
+/*
+  altera(id, valores, res) {
+    if(valores.data) {
+      valores.data = moment(valores.data, 'DD/MM/YYYY').format('YYYY-MM-DD HH:MM:SS');
+    }
+    const sql = 'UPDATE Atendimentos SET ? WHERE id = ?'
+
+    conexao.query(sql, [valores, id], (erro, resultados) => {
+      if(erro) {
+        res.status(400).json(erro)
+      } else {
+        res.status(200).json(resultados)
+      }
+    })
+  }
+*/
+
+agora dentro do controller de atendimento vamos criar o verbo de delete
+app.delete('/atendimento/:id', (req, res) => {
+    const { id } = req.params;
+
+    Atendimento.delete(id, res);
+  })
+
+agora vamos para o model/atendimento.js
+/*
+  delete(id, res) {
+    const sql = "DELETE FROM Atendimentos WHERE id = ?"
+
+    conexao.query(sql, Number(id), (erro, resultados) => {
+      if(erro) {
+        res.status(400).json(erro)
+      } else {
+        res.status(200).json({ id })
+        //POdemos fazer isso para todos verbos q sao alterados e deletados.
+      }
+    })
+  }
+*/

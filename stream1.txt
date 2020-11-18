@@ -1,0 +1,38 @@
+Nessa parte vamos trabalhar com stream onde aprenderemos como salvar imagens e 
+arquivos.
+
+1) vamos criar uma pasta e colocar o nome de arquivos.
+2) depois dentro dela vamos criar um arquivo chamado de uploadsArquivos.js
+depois vamos a biblioteca fs
+/*************************Buffer*********************************************/
+const fs = require('fs');
+
+fs.readFile('./assets/cachorro.jpg', (erro, buffer) => {
+  console.log('imagem foi bufferizada')
+  console.log(buffer)
+})
+
+
+agora vamos aprender a escrver buffer
+const fs = require('fs');
+
+fs.readFile('./assets/cachorro.jpg', (erro, buffer) => {
+  console.log('imagem foi bufferizada')
+  
+  fs.writeFile('./assets/cachorro2.jpg', buffer, erro =>{
+    console.log('imagem foi escrita.')
+  })
+})
+
+/************************************Stream***********************************/
+
+Agora vamos criar um Stream de leitura
+const fs = require('fs');
+
+fs.createReadStream('./assets/cachorro.jpg')
+  .pipe(fs.createWriteStream('./assets/cachorro-stream.jpg'))
+  .on('finish', () => {
+    console.log('Imagem foi escrita com sucesso.')
+  })
+
+EventLoop
